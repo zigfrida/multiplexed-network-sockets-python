@@ -5,7 +5,7 @@ import time
 
 HOST = "127.0.0.1"  # The server's hostname ot IP address
 PORT = 65433        # Port used by the server
-SIZE = 1024
+SIZE = 2048
 FORMAT = "utf-8"
 
 def send_file(file_path, server_socket):
@@ -17,16 +17,9 @@ def send_file(file_path, server_socket):
     file_name = os.path.basename(file_path)
     file_size = os.path.getsize(file_path)
     file_info = f"{file_name}!{file_size}"
-    print(f"Sending info: {file_info}")
-
-    # server_socket.send(file_info.encode())
+    print(f"Sending file: {file_name}, file size: {file_size}")
 
     with open(file_path, 'rb') as file:
-        # Concatenate the file info and content, separated by "!"
-        # file_data = file_info.encode() + "!".encode() + file.read()
-
-        # # Send the combined data
-        # server_socket.sendall(file_data)
         file_data = f"{file_info}!{file.read().decode()}"
         server_socket.sendall(file_data.encode())
     
@@ -48,10 +41,9 @@ def main(files):
     
     try:
         for file_path in files:
+            send_file(file_path, server_socket)
             print("Sleeping...")
             time.sleep(5)
-            send_file(file_path, server_socket)
-        # server_socket.send("DONE".encode())
     finally:
         server_socket.close()
 

@@ -7,7 +7,7 @@ import signal
 
 HOST = "127.0.0.1"
 PORT = 65433
-SIZE = 1024
+SIZE = 2048
 FORMAT = "utf-8"
 
 server_socket = None
@@ -30,10 +30,12 @@ def main():
     global running
     signal.signal(signal.SIGINT, signal_handler)
 
+    print("[STARTING] server is starting...")
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.settimeout(None)
     server_socket.bind((HOST, PORT))
     server_socket.listen()
-    print(f"[LISTEN] Server listening on {HOST}:{PORT}")
+    print(f"[LISTEN] Server is listening on {HOST}:{PORT}")
 
     inputs = [server_socket]
     outputs = []
@@ -49,24 +51,34 @@ def main():
                     inputs.append(conn)
                     message_queues[conn] = queue.Queue()
                     print(f"[NEW CONNECTION] Connected by {addr}")
+                    print(f"[ACTIVE CONNECTIONS] {len(inputs) - 1}")
                 else:
                     data = s.recv(SIZE)
+                    
+                    # data = b''
+                    # while True:
+                    #     part = s.recv(SIZE)
+                    #     data += part
+                    #     if len(part) < SIZE:
+                    #         break
+                    
+
                     if not data:
                         # No more data, close the connection
-                        print(f"[CLOSED] No more data. Connection Closed.")
+                        print(f"[CLOSED CONNECTION] No more data. Connection Closed.")
                         if s in outputs:
                             outputs.remove(s)
                         inputs.remove(s)
+                        print(f"[ACTIVE CONNECTIONS] {len(inputs) - 1}")
                         s.close()
                         del message_queues[s]
                     else:
                         # Process the received data
                         if b"!" in data:
-                            # file_info, content = data.split(b"!", 1)
                             file_name, file_size_str, content = data.split(b"!", 2)
-                            # print(f"File info: {file_info}")
-                            # file_name, file_size_str = file_info.decode().split('!')
+                            print(f"File name {file_name}")
                             file_size = int(file_size_str)
+                            print(f"File size {file_size}")
                             file_name = file_name.decode()
                             file_path = os.path.join(storage_directory, file_name)
 
@@ -76,22 +88,12 @@ def main():
                                 file.write(content)  # Write the received content
 
                             if already_exist:
-                                print(f"Skipping file {file_name} since it already exists.")
                                 message_queues[s].put(f"File {file_name} already exists. Content replaced!".encode())
                             else:
-                                print(f"File: {file_name} has been saved.")
                                 message_queues[s].put(f"File: {file_name} has been saved.".encode())
 
                             if s not in outputs:
                                 outputs.append(s)
-
-                    # else:
-                    #     print(f"[CLOSED] No more data. Connection Closed.")
-                    #     if s in outputs:
-                    #         outputs.remove(s)
-                    #     inputs.remove(s)
-                    #     s.close()
-                    #     del message_queues[s]
 
 
             for s in writable:
@@ -100,7 +102,7 @@ def main():
                 except queue.Empty:
                     outputs.remove(s)
                 else:
-                    print("[SEND] Pending message, writing to socket.")
+                    print(f"[SEND] {next_msg.decode()}")
                     s.send(next_msg)
 
             for s in exceptional:
@@ -109,9 +111,9 @@ def main():
                     outputs.remove(s)
                 s.close()
                 del message_queues[s]
+                print(f"[ACTIVE CONNECTIONS] {len(inputs) - 1}")
 
         except KeyboardInterrupt:
-            # Handle Ctrl+C gracefully
             running = False
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -128,7 +130,7 @@ if __name__ == "__main__":
         print("Missing storage directory.")
     else:
         storage_directory = sys.argv[1]
-        print(f"Storage directory: {storage_directory}")
+        # print(f"Storage directory: {storage_directory}")
 
         if not os.path.exists(storage_directory):
             os.makedirs(storage_directory)
