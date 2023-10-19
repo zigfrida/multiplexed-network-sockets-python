@@ -1,7 +1,7 @@
 ## Program 1: server
 
-● Run: ./server <ip 4 or 6 address to bind to> <port> ./directory-to-store-files
+● Run: `python3 server.py ./directory_storage`
 
 ## Program 2: client
 
-● Run: ./client <ip 4 or 6 address to connect to> <port> \*.txt
+● Run: `python3 client.py *.txt`

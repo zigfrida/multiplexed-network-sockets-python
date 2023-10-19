@@ -2,6 +2,7 @@ import socket
 import signal
 import sys
 import os
+import select
 
 HOST = "127.0.0.1"
 PORT = 65432
@@ -9,12 +10,16 @@ SIZE = 1024
 FORMAT = "utf-8"
 
 server_socket = None
+client_sockets = []
+
 
 def signal_handler(sig, frame):
     print("\nUser Interruption. Shutting down server.")
-    if server_socket: 
+    for client_socket in client_sockets:
+        client_socket.close()
+    if server_socket:
         server_socket.close()
-    exit(0)
+    sys.exit(0)
 
 
 def handle_client(conn):
@@ -62,16 +67,27 @@ def main():
 
     except OSError as e:
         print(f"Error: {e}. Server may already be running.")
+    
+    inputs = [server_socket]  # List of input sources to monitor
 
     try:
         while True:
-            conn, addr = server_socket.accept()
-            print(f"Connected by {addr}")
+            readable, _, _ = select.select(inputs, [], [])  # Use select to monitor sockets
+            for sock in readable:
+                if sock is server_socket:
+                    conn, addr = server_socket.accept()
+                    print(f"Connected by {addr}")
+                    inputs.append(conn)
+                    client_sockets.append(conn)
+                else:
+                    handle_client(sock)
+                    sock.close()
+                    inputs.remove(sock)
 
-            handle_client(conn)
-            conn.close()
     except KeyboardInterrupt:
         print("\nServer interrupted by user")
+        for client_socket in client_sockets:
+            client_socket.close()
         server_socket.close()
 
 
