@@ -3,7 +3,7 @@ import sys
 import os
 
 HOST = "127.0.0.1"  # The server's hostname ot IP address
-PORT = 65432        # Port used by the server
+PORT = 65433       # Port used by the server
 SIZE = 1024
 FORMAT = "utf-8"
 
@@ -18,21 +18,16 @@ def send_file(file_path, server_socket):
     file_info = f"{file_name}!{file_size}"
     print(f"Sending info: {file_info}")
 
-    server_socket.send(file_info.encode())
-
-    check_exists = server_socket.recv(SIZE).decode()
-    if check_exists == "duplicate found":
-        print(f"Skipping file {file_name} since it already exists.")
-        return
-    else:
-        print(check_exists)
+    # server_socket.send(file_info.encode())
 
     with open(file_path, 'rb') as file:
-        while True:
-            data = file.read(SIZE)
-            if not data:
-                break
-            server_socket.sendall(data)
+        # Concatenate the file info and content, separated by "!"
+        # file_data = file_info.encode() + "!".encode() + file.read()
+
+        # # Send the combined data
+        # server_socket.sendall(file_data)
+        file_data = f"{file_info}!{file.read().decode()}"
+        server_socket.sendall(file_data.encode())
     
     response = server_socket.recv(SIZE).decode()
     if response != "":
@@ -54,7 +49,7 @@ def main(files):
         for file_path in files:
             send_file(file_path, server_socket)
         
-        server_socket.send("DONE".encode())
+        # server_socket.send("DONE".encode())
     finally:
         server_socket.close()
 

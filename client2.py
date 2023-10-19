@@ -1,6 +1,7 @@
 import socket
 import sys
 import os
+import time
 
 HOST = "127.0.0.1"  # The server's hostname ot IP address
 PORT = 65432        # Port used by the server
@@ -53,6 +54,8 @@ def main(files):
     try:
         for file_path in files:
             send_file(file_path, server_socket)
+            print("Sleeping...")
+            time.sleep(5)
         
         server_socket.send("DONE".encode())
     finally:
