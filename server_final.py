@@ -5,8 +5,8 @@ import os
 import queue
 import signal
 
-HOST = "127.0.0.1"
-PORT = 65433
+HOST = "10.0.0.10"
+PORT = 8000
 SIZE = 2048
 FORMAT = "utf-8"
 
@@ -33,7 +33,7 @@ def main():
     print("[STARTING] server is starting...")
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.settimeout(None)
-    server_socket.bind((HOST, PORT))
+    server_socket.bind((HOST, int(PORT)))
     server_socket.listen()
     print(f"[LISTEN] Server is listening on {HOST}:{PORT}")
 
@@ -54,14 +54,6 @@ def main():
                     print(f"[ACTIVE CONNECTIONS] {len(inputs) - 1}")
                 else:
                     data = s.recv(SIZE)
-                    
-                    # data = b''
-                    # while True:
-                    #     part = s.recv(SIZE)
-                    #     data += part
-                    #     if len(part) < SIZE:
-                    #         break
-                    
 
                     if not data:
                         # No more data, close the connection
@@ -76,9 +68,7 @@ def main():
                         # Process the received data
                         if b"!" in data:
                             file_name, file_size_str, content = data.split(b"!", 2)
-                            print(f"File name {file_name}")
                             file_size = int(file_size_str)
-                            print(f"File size {file_size}")
                             file_name = file_name.decode()
                             file_path = os.path.join(storage_directory, file_name)
 
@@ -126,11 +116,12 @@ def main():
     sys.exit(0)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Missing storage directory.")
+    if len(sys.argv) < 4:
+        print("Missing required parameters: ./server <ip 4 or 6 address to bind to> <port> ./directory-to-store-files")
     else:
-        storage_directory = sys.argv[1]
-        # print(f"Storage directory: {storage_directory}")
+        HOST = sys.argv[1]
+        PORT = sys.argv[2]
+        storage_directory = sys.argv[3]
 
         if not os.path.exists(storage_directory):
             os.makedirs(storage_directory)

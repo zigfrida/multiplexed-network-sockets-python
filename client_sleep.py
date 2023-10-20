@@ -3,8 +3,8 @@ import sys
 import os
 import time
 
-HOST = "127.0.0.1"  # The server's hostname ot IP address
-PORT = 65433        # Port used by the server
+HOST = "10.0.0.10"
+PORT = 8000
 SIZE = 2048
 FORMAT = "utf-8"
 
@@ -33,7 +33,7 @@ def main(files):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Creating a socket object
 
     try:
-        server_socket.connect((HOST, PORT))
+        server_socket.connect((HOST, int(PORT)))
         print("Connected!")
     except ConnectionRefusedError:
         print("Server does not seem to be running.")
@@ -44,13 +44,19 @@ def main(files):
             send_file(file_path, server_socket)
             print("Sleeping...")
             time.sleep(5)
+    except KeyboardInterrupt:
+        print("\nUser Interruption. Exit client.")
+        sys.exit(1)
+    
     finally:
         server_socket.close()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Missing files to send to server.")
+    if len(sys.argv) < 4:
+        print("Missing required parameters: ./client <ip 4 or 6 address to connect to> <port> *.txt")
     else:
-        files = sys.argv[1:]
+        HOST = sys.argv[1]
+        PORT = sys.argv[2]
+        files = sys.argv[3:]
         main(files)
